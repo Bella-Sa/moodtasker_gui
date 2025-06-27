@@ -133,6 +133,10 @@ class DashboardView(ctk.CTkFrame):
         self.refresh_data()
     
     def delete_task(self, task):
+        task_id = task.get('id') # 1. Obter o ID da tarefa
+        if not task_id:
+            messagebox.showerror("Erro", "Não foi possível encontrar o ID da tarefa para deletar.")
+            return
 
         task_title = task.get('titulo', 'a tarefa selecionada')
         answer = messagebox.askyesno(
@@ -140,7 +144,8 @@ class DashboardView(ctk.CTkFrame):
             f"Tem certeza que deseja deletar a tarefa '{task_title}'?\nEsta ação não pode ser desfeita."
         )
         if answer:
-            self.api_client.delete_task()
+            # 2. Passar o ID para a chamada da API
+            self.api_client.delete_task(task_id) 
             self.refresh_data()
 
     def refresh_data(self):
