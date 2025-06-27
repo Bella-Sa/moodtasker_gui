@@ -48,13 +48,29 @@ class TasksView(ctk.CTkFrame):
         # Container para a lista de tarefas
         self.tasks_list_container = ctk.CTkScrollableFrame(main_content, fg_color="white", corner_radius=10, border_width=1, border_color="#EAECEE")
         self.tasks_list_container.grid(row=2, column=0, sticky="nsew", pady=(10,0))
-
+    
+    def _format_time_from_minutes(self, total_minutes):
+        """Converte um total de minutos para uma string formatada como 'Xh Ymin'."""
+        if total_minutes is None or not isinstance(total_minutes, (int, float)):
+            return "N/A"
+        
+        total_minutes = int(total_minutes)
+        
+        if total_minutes < 60:
+            return f"{total_minutes} min"
+        else:
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            if minutes == 0:
+                return f"{hours}h"
+            else:
+                return f"{hours}h {minutes}min"
+            
     def create_task_card(self, parent_frame, task, is_pending):
         card_fg_color = "#FFFFFF" if is_pending else "#F0F3F4"
         card = ctk.CTkFrame(parent_frame, fg_color=card_fg_color, border_color="#EAECEE", border_width=1, corner_radius=10)
         card.pack(fill="x", pady=5, padx=5)
 
-        # Adiciona o card à lista de tarefas
         ctk.CTkLabel(card, text=task.get('titulo', 'Sem Título'), font=("Poppins", 16, "bold"), text_color="#305741").pack(anchor="w", padx=15, pady=(10,0))
         
         tags_frame = ctk.CTkFrame(card, fg_color="transparent")
@@ -62,12 +78,17 @@ class TasksView(ctk.CTkFrame):
         
         priority = task.get('prioridade', 1)
         effort = task.get('tipo_esforco', 'leve')
+        # MODIFICADO: Busca os minutos e formata usando o novo método
+        tempo_estimado_min = task.get('tempo_estimado')
+        tempo_formatado = self._format_time_from_minutes(tempo_estimado_min)
+
         priority_color = self.PRIORITY_COLORS.get(priority, {"bg": "#E5E7E9", "text": "#566573"})
         effort_color = self.EFFORT_COLORS.get(effort, {"bg": "#E5E7E9", "text": "#566573"})
         
         ctk.CTkLabel(tags_frame, text=f"Prioridade: {priority}", fg_color=priority_color["bg"], text_color=priority_color["text"], corner_radius=5).pack(side="left", padx=(0,5))
         ctk.CTkLabel(tags_frame, text=effort.capitalize(), fg_color=effort_color["bg"], text_color=effort_color["text"], corner_radius=5).pack(side="left", padx=5)
-        ctk.CTkLabel(tags_frame, text=f"{task.get('tempo_estimado')} min", fg_color="#E5E7E9", text_color="#566573", corner_radius=5).pack(side="left", padx=5)
+        # MODIFICADO: Usa a string de tempo formatada
+        ctk.CTkLabel(tags_frame, text=tempo_formatado, fg_color="#E5E7E9", text_color="#566573", corner_radius=5).pack(side="left", padx=5)
 
         if task.get('descricao'):
             ctk.CTkLabel(card, text=task.get('descricao'), wraplength=400, justify="left", text_color="#566573").pack(anchor="w", padx=15, pady=5)
@@ -83,7 +104,7 @@ class TasksView(ctk.CTkFrame):
         ctk.CTkButton(actions_frame, text="Editar", width=80, command=lambda t=task: self.open_task_form(t)).pack(side="left", padx=10)
         ctk.CTkButton(actions_frame, text="Deletar", text_color="#E74C3C", fg_color="transparent", hover=False, width=60, command=lambda t=task: self.delete_task(t)).pack(side="left", padx=10)
 
-    def populate_lists(self, all_tasks):        
+    def populate_lists(self, all_tasks):      
         """Popula a lista de tarefas com os dados recebidos do controlador."""
         for widget in self.tasks_list_container.winfo_children(): widget.destroy()
 

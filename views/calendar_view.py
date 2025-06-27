@@ -40,8 +40,6 @@ class CalendarView(ctk.CTkFrame):
         if not self.controller.current_user: return
         user_id = self.controller.current_user.get("id")
 
-        print(f"DEBUG mark_events: Desenhando calendário. A view está usando esta lista de dias inativos: {json.dumps(self.controller.all_inactive_days, indent=2)}")
-
         reason_colors = {
             "férias": "#FFAB40",
             "feriado": "#B39DDB",

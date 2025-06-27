@@ -69,6 +69,23 @@ class DashboardView(ctk.CTkFrame):
 
         self.tasks_list_frame = ctk.CTkScrollableFrame(self.tasks_area_frame, fg_color="transparent", corner_radius=0)
         self.tasks_list_frame.grid(row=1, column=0, sticky="nsew", pady=10)
+    
+    def _format_time_from_minutes(self, total_minutes):
+        """Converte um total de minutos para uma string formatada como 'Xh Ymin'."""
+        if total_minutes is None or not isinstance(total_minutes, (int, float)):
+            return "N/A"
+        
+        total_minutes = int(total_minutes)
+
+        if total_minutes < 60:
+            return f"{total_minutes} min"
+        else:
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            if minutes == 0:
+                return f"{hours}h"
+            else:
+                return f"{hours}h {minutes}min"
 
     def open_task_form(self, task_data=None):
         """Abre o pop-up para criar ou editar uma tarefa."""
@@ -107,13 +124,21 @@ class DashboardView(ctk.CTkFrame):
             ctk.CTkLabel(card, text=task.get('titulo', 'Sem Título'), font=("Poppins", 16, "bold"), text_color="#305741").pack(anchor="w", padx=15, pady=(10,0))
             tags_frame = ctk.CTkFrame(card, fg_color="transparent")
             tags_frame.pack(fill="x", padx=15, pady=5)
+            
             priority = task.get('prioridade', 1)
             effort = task.get('tipo_esforco', 'leve')
+            # MODIFICADO: Busca os minutos e formata usando o novo método
+            tempo_estimado_min = task.get('tempo_estimado')
+            tempo_formatado = self._format_time_from_minutes(tempo_estimado_min)
+
             priority_color = self.PRIORITY_COLORS.get(priority, {"bg": "#E5E7E9", "text": "#566573"})
             effort_color = self.EFFORT_COLORS.get(effort, {"bg": "#E5E7E9", "text": "#566573"})
+            
             ctk.CTkLabel(tags_frame, text=f"Prioridade: {priority}", fg_color=priority_color["bg"], text_color=priority_color["text"], corner_radius=5).pack(side="left", padx=(0,5))
             ctk.CTkLabel(tags_frame, text=effort.capitalize(), fg_color=effort_color["bg"], text_color=effort_color["text"], corner_radius=5).pack(side="left", padx=5)
-            ctk.CTkLabel(tags_frame, text=f"{task.get('tempo_estimado')} min", fg_color="#E5E7E9", text_color="#566573", corner_radius=5).pack(side="left", padx=5)
+            # MODIFICADO: Usa a string de tempo formatada
+            ctk.CTkLabel(tags_frame, text=tempo_formatado, fg_color="#E5E7E9", text_color="#566573", corner_radius=5).pack(side="left", padx=5)
+            
             ctk.CTkLabel(card, text=task.get('descricao', ''), wraplength=400, justify="left", text_color="#566573").pack(anchor="w", padx=15, pady=5)
             actions_frame = ctk.CTkFrame(card, fg_color="transparent")
             actions_frame.pack(fill="x", padx=15, pady=10)

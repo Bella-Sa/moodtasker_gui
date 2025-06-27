@@ -67,7 +67,6 @@ class App(ctk.CTk):
         self.all_tasks = self.api_client.get_all_tasks() or []
         self.all_agendas = self.api_client.get_all_agendas() or []
         self.all_inactive_days = self.api_client.get_dias_inativos() or []
-        print("Dados carregados!")
 
         # Lógica para permitir forçar o refresh de uma view específica
         if force_refresh_view and force_refresh_view in self.frames:

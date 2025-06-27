@@ -78,13 +78,34 @@ class TaskFormPopup(ctk.CTkToplevel):
 
         self.set_initial_values()
 
+    # NOVO MÉTODO: Adicionado para converter minutos em horas e minutos
+    def _format_time_from_minutes(self, total_minutes):
+        """Converte um total de minutos para uma string formatada como 'Xh Ymin'."""
+        if total_minutes is None:
+            return "N/A"
+        
+        total_minutes = int(total_minutes)
+
+        if total_minutes < 60:
+            return f"{total_minutes} min"
+        else:
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            if minutes == 0:
+                return f"{hours}h"
+            else:
+                return f"{hours}h {minutes}min"
+
     def update_priority_label(self, value):
         priority_value = int(value)
         priority_text = self.PRIORITY_MAP.get(priority_value, "Média")
         self.priority_value_label.configure(text=f"{priority_text} ({priority_value})")
 
+    # MODIFICADO: Este método agora usa a função de formatação
     def update_time_label(self, value):
-        self.time_value_label.configure(text=f"{int(value)} minutos")
+        """Atualiza o rótulo de tempo usando o formato de horas e minutos."""
+        formatted_time = self._format_time_from_minutes(value)
+        self.time_value_label.configure(text=formatted_time)
         
     def set_initial_values(self):
         if self.task_data:

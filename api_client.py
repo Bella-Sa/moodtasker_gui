@@ -83,12 +83,20 @@ class ApiClient:
         
     # --- Métodos de Agenda ---
     def get_all_agendas(self):
-        """Busca todos os agendamentos."""
-        return self._request("GET", "/agendas/") or []
-    
+        """Busca todas as agendas de tarefas da API."""
+        return self._request("GET", "/agendas/")
+
     def create_agenda(self, agenda_data):
-        """Agenda uma tarefa para uma data e hora."""
+        """Cria uma nova agenda de tarefa."""
         return self._request("POST", "/agendas/", data=agenda_data)
+
+    def update_agenda(self, agenda_id, agenda_data):
+        """Atualiza uma agenda de tarefa existente."""
+        return self._request("PUT", f"/agendas/{agenda_id}", data=agenda_data)
+
+    def delete_agenda(self, agenda_id):
+        """Deleta uma agenda de tarefa."""
+        return self._request("DELETE", f"/agendas/{agenda_id}")
 
     # --- Métodos de Dia Inativo ---
     def get_dias_inativos(self):
