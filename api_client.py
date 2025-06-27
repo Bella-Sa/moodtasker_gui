@@ -98,6 +98,10 @@ class ApiClient:
     def create_dia_inativo(self, dia_data):
         """Cria um dia inativo."""
         return self._request("POST", "/dias-inativos/", data=dia_data)
+    
+    def update_dia_inativo(self, dia_id, dia_data):
+        """Atualiza um dia inativo existente."""
+        return self._request("PUT", f"/dias-inativos/{dia_id}", data=dia_data)
 
     def delete_dia_inativo(self, dia_id):
         """Deleta um dia inativo."""

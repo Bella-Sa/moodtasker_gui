@@ -21,7 +21,6 @@ class App(ctk.CTk):
         except Exception as e:
             print(f"Erro ao carregar ícone: {e}")
 
-        # --- Armazenamento Central de Dados ---
         self.api_client = ApiClient()
         self.current_user = None
         self.all_tasks = []
@@ -60,30 +59,29 @@ class App(ctk.CTk):
         if hasattr(frame, 'refresh_data'):
             frame.refresh_data()
 
-    def refresh_app_data(self):
+    def refresh_app_data(self, force_refresh_view=None):
         """Busca todos os dados principais da API e os armazena centralmente."""
         if not self.current_user:
             return
         
-        user_id = self.current_user['id']
-
         self.all_tasks = self.api_client.get_all_tasks() or []
         self.all_agendas = self.api_client.get_all_agendas() or []
         self.all_inactive_days = self.api_client.get_dias_inativos() or []
         print("Dados carregados!")
-        self.update_current_frame()
 
-        self.update_current_frame()
+        # Lógica para permitir forçar o refresh de uma view específica
+        if force_refresh_view and force_refresh_view in self.frames:
+            print(f"Forçando atualização da view: {force_refresh_view}")
+            self.frames[force_refresh_view].refresh_data()
+        else:
+            self.update_current_frame()
 
     def update_current_frame(self):
         """Encontra a tela visível e chama seu método refresh_data, se ele existir."""
         for frame in self.frames.values():
-            # Verifica se a frame está visível na tela
             if frame.winfo_ismapped():
-                # Se a frame estiver visível E tiver o método 'refresh_data', chama ele.
                 if hasattr(frame, 'refresh_data'):
                     frame.refresh_data()
-                    # Encontramos e atualizamos a tela ativa, então podemos parar o loop.
                     break 
 
     def login_success(self, user_data):
@@ -98,8 +96,42 @@ class App(ctk.CTk):
 
     def logout(self):
         self.current_user = None
-        self.all_tasks, self.all_agendas, self.all_inactive_days, self.all_historicos = [], [], [], [] # Limpa os dados
+        self.all_tasks, self.all_agendas, self.all_inactive_days, self.all_historicos = [], [], [], []
         self.show_frame("login") 
+
+    def add_or_update_inactive_day(self, date_str, reason, inactive_day_id=None):
+        """Cria ou atualiza um dia inativo e atualiza a aplicação."""
+        if not self.current_user:
+            return False
+
+        payload = {"motivo": reason}
+        response = None
+
+        if inactive_day_id:
+            response = self.api_client.update_dia_inativo(inactive_day_id, payload)
+        else:
+            payload["usuario_id"] = self.current_user["id"]
+            payload["data"] = date_str
+            response = self.api_client.create_dia_inativo(payload)
+        
+        if response:
+            print("Operação bem-sucedida! Recarregando todos os dados...")
+            self.refresh_app_data(force_refresh_view="calendar") 
+            return True
+        return False
+
+    def delete_inactive_day(self, inactive_day_id):
+        """Deleta um dia inativo e atualiza a aplicação."""
+        if not inactive_day_id:
+            return False
+            
+        success = self.api_client.delete_dia_inativo(inactive_day_id)
+        
+        if success:
+            print("Deleção bem-sucedida! Recarregando todos os dados...")
+            self.refresh_app_data(force_refresh_view="calendar")
+            return True
+        return False
 
     def setup_navigation_menu(self, nav_frame):
         nav_frame.grid_rowconfigure(6, weight=1)
@@ -121,8 +153,8 @@ class App(ctk.CTk):
         for btn_text, page_key in button_info.items():
             nav_image = create_rounded_gradient_button_image(btn_text, BTN_WIDTH, BTN_HEIGHT, GRADIENT_PATH, FONT_PATH, FONT_SIZE, CORNER_RADIUS)
             button = ctk.CTkButton(nav_frame, image=nav_image, text="", 
-                                    command=lambda p=page_key: self.show_frame(p), 
-                                    fg_color="transparent", hover=False, border_width=0)
+                                        command=lambda p=page_key: self.show_frame(p), 
+                                        fg_color="transparent", hover=False, border_width=0)
             button.pack(pady=5, padx=20, fill="x")
 
         logout_button = ctk.CTkButton(nav_frame, text="Log out", command=self.logout, height=40, fg_color="#E74C3C", hover_color="#C0392B")

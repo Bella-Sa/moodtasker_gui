@@ -1,15 +1,14 @@
 import customtkinter as ctk
 from tkcalendar import Calendar
-from api_client import ApiClient
 from views.day_detail_popup import DayDetailPopup
 from datetime import datetime
+import json
 
 class CalendarView(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F0FFF4")
         
         self.controller = controller
-        self.api_client = ApiClient()
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -41,6 +40,15 @@ class CalendarView(ctk.CTkFrame):
         if not self.controller.current_user: return
         user_id = self.controller.current_user.get("id")
 
+        print(f"DEBUG mark_events: Desenhando calendário. A view está usando esta lista de dias inativos: {json.dumps(self.controller.all_inactive_days, indent=2)}")
+
+        reason_colors = {
+            "férias": "#FFAB40",
+            "feriado": "#B39DDB",
+            "viagem": "#EF9A9A",
+        }
+        default_inactive_color = "#A0A0A0"
+
         for agenda in self.controller.all_agendas:
             task = next((t for t in self.controller.all_tasks if t.get("id") == agenda.get("tarefa_id")), None)
             if task and task.get("usuario_id") == user_id:
@@ -57,15 +65,19 @@ class CalendarView(ctk.CTkFrame):
         for date_str, info in events.items():
             try:
                 event_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                if info["inactive_reason"]:
-                    self.cal.calevent_create(event_date, info["inactive_reason"], "inactive")
-                elif info["tasks"] > 0:
+                if info.get("inactive_reason"):
+                    reason_text = info["inactive_reason"].lower().strip()
+                    tag = f"inactive_{reason_text}"
+                    color = reason_colors.get(reason_text, default_inactive_color)
+                    self.cal.calevent_create(event_date, info["inactive_reason"], tag)
+                    self.cal.tag_config(tag, background=color, foreground="white")
+                elif info.get("tasks", 0) > 0:
                     self.cal.calevent_create(event_date, f"{info['tasks']} Tarefa(s)", "event")
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                print(f"Erro ao processar data do evento: {e}")
                 continue
         
         self.cal.tag_config("event", background="green", foreground="white")
-        self.cal.tag_config("inactive", background="#3498DB", foreground="white")
 
     def on_day_selected(self, event):
         selected_date = self.cal.selection_get()
@@ -79,7 +91,7 @@ class CalendarView(ctk.CTkFrame):
                 if task_details:
                     tasks_on_day.append(task_details)
 
-        popup = DayDetailPopup(self, self.controller, selected_date, tasks_on_day, on_close_callback=self.controller.refresh_app_data)
+        popup = DayDetailPopup(self, self.controller, selected_date, tasks_on_day)
         popup.grab_set()
 
     def refresh_data(self):
